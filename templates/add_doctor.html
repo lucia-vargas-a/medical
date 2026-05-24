@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Add Doctor</h1>
+<div class="privacy-note">🔒 Do NOT enter the doctor's real name. The system assigns a number (Doctor 1, Doctor 2...). Keep a private note with the real name mapping.</div>
+<div class="card">
+<form method="POST">
+  <div class="grid2">
+    <div class="form-group">
+      <label>Specialty *</label>
+      <input type="text" name="specialty" value="{{ form.get('specialty','') }}"
+        placeholder="e.g. Orthopedic, Rheumatologist, GP, General Dentist, Periodontist, Endodontist, Oral Surgeon" required>
+    </div>
+    <div class="form-group">
+      <label>City</label>
+      <input type="text" name="city" value="{{ form.get('city','') }}" placeholder="e.g. Madrid">
+    </div>
+    <div class="form-group">
+      <label>Country</label>
+      <input type="text" name="country" value="{{ form.get('country','') }}" placeholder="e.g. Spain">
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Notes (no personal info)</label>
+    <textarea name="notes" placeholder="e.g. Referred by Doctor 1. Specialises in sports injuries.">{{ form.get('notes','') }}</textarea>
+  </div>
+  <button type="submit" class="btn btn-primary">Save Doctor</button>
+  <a href="/doctors" class="btn btn-secondary" style="margin-left:10px;">Cancel</a>
+</form>
+</div>
+{% endblock %}

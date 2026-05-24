@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Log Appointment</h1>
+<div class="privacy-note">🔒 No personal info. Use doctor codes only.</div>
+<div class="card">
+<form method="POST">
+  <div class="grid2">
+    <div class="form-group">
+      <label>Condition *</label>
+      <select name="condition_id" required>
+        <option value="">— select —</option>
+        {% for c in conditions %}<option value="{{ c.id }}">#{{ c.id }} — {{ c.name }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Doctor (code)</label>
+      <select name="doctor_id">
+        <option value="">— none / unknown —</option>
+        {% for d in doctors %}<option value="{{ d.id }}">Doctor {{ d.id }} ({{ d.specialty }})</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Date Requested</label>
+      <input type="date" name="requested_date">
+    </div>
+    <div class="form-group">
+      <label>Appointment Date *</label>
+      <input type="date" name="appointment_date" required>
+    </div>
+  </div>
+  <div class="form-group">
+    <label>Reason for appointment</label>
+    <textarea name="reason" placeholder="e.g. Follow-up on knee pain, review medication effectiveness"></textarea>
+  </div>
+  <div class="form-group">
+    <label>Outcome / What was decided</label>
+    <textarea name="outcome" placeholder="e.g. Switched from Ibuprofen to Naproxen. Referred to physiotherapy."></textarea>
+  </div>
+  <div class="form-group">
+    <label><input type="checkbox" name="follow_up_needed" style="width:auto;margin-right:6px;">Follow-up appointment needed</label>
+  </div>
+  <button type="submit" class="btn btn-primary">Save Appointment</button>
+  <a href="/" class="btn btn-secondary" style="margin-left:10px;">Cancel</a>
+</form>
+</div>
+{% endblock %}

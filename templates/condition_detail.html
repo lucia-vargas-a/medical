@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+  <div>
+    <h1 style="margin-bottom:4px;">#{{ condition.id }} — {{ condition.name }}</h1>
+    <div style="color:#718096;font-size:14px;">
+      {% if condition.diagnosed_date %}Diagnosed {{ condition.diagnosed_date }} · {% endif %}
+      <span class="badge {% if condition.status=='active' %}badge-orange{% elif condition.status=='resolved' %}badge-green{% else %}badge-blue{% endif %}">{{ condition.status }}</span>
+      {% if condition.icd_code %} · ICD: {{ condition.icd_code }}{% endif %}
+    </div>
+  </div>
+  <a href="/conditions/{{ condition.id }}/history" class="btn btn-primary">📋 Full History</a>
+</div>
+
+{% if condition.body_parts %}
+<div class="card">
+  <h2>Body Parts Affected</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:8px;">
+  {% for bp in condition.body_parts %}
+    <span class="badge badge-blue" style="font-size:13px;padding:5px 14px;">{{ bp.body_part }}</span>
+  {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="grid2">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h2 style="margin:0;">Recent Symptom Logs</h2>
+      <a href="/log/add" class="btn btn-primary btn-sm">+ Log</a>
+    </div>
+    {% for log in logs[:5] %}
+    <div style="padding:8px 0;border-bottom:1px solid #edf2f7;font-size:13px;">
+      <div style="display:flex;justify-content:space-between;">
+        <strong>{{ log.body_part or 'General' }}</strong>
+        <span style="color:#718096;">{{ log.logged_at.strftime('%d %b %Y') }}</span>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <span>Pain: <strong>{{ log.pain_level }}</strong></span>
+        <span>Heat: <strong>{{ log.heat_level }}</strong></span>
+        <span>Swelling: <strong>{{ log.swelling_level }}</strong></span>
+      </div>
+    </div>
+    {% else %}
+    <p style="color:#718096;font-size:13px;">No logs yet.</p>
+    {% endfor %}
+  </div>
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h2 style="margin:0;">Treatments</h2>
+      <a href="/treatments/add" class="btn btn-primary btn-sm">+ Add</a>
+    </div>
+    {% for t in treatments[:5] %}
+    <div style="padding:8px 0;border-bottom:1px solid #edf2f7;font-size:13px;">
+      <div style="display:flex;justify-content:space-between;">
+        <strong>{{ t.name }}</strong>
+        <span class="badge {% if t.outcome=='helped' %}badge-green{% elif t.outcome=='no_relief' %}badge-orange{% elif t.outcome=='made_worse' %}badge-red{% else %}badge-gray{% endif %}">
+          {{ (t.outcome or 'pending')|replace('_',' ')|title }}
+        </span>
+      </div>
+      <div style="color:#718096;">{{ t.treatment_type|title }}</div>
+    </div>
+    {% else %}
+    <p style="color:#718096;font-size:13px;">No treatments yet.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

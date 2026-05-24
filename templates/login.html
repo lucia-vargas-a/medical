@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login — Medical Tracker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f4f8; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    .box { background: white; border-radius: 12px; padding: 40px; width: 360px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+    h1 { font-size: 22px; color: #1a202c; margin-bottom: 6px; }
+    p { font-size: 13px; color: #718096; margin-bottom: 28px; }
+    label { display: block; font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 5px; }
+    input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 7px; font-size: 14px; margin-bottom: 16px; }
+    input:focus { outline: none; border-color: #2b4a8c; }
+    button { width: 100%; padding: 11px; background: #2b4a8c; color: white; border: none; border-radius: 7px; font-size: 15px; font-weight: 600; cursor: pointer; }
+    button:hover { background: #1e3a7a; }
+    .err { background: #fff5f5; border: 1px solid #fed7d7; color: #c53030; border-radius: 7px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
+    .icon { font-size: 36px; margin-bottom: 14px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="icon">🏥</div>
+    <h1>Medical Tracker</h1>
+    <p>Private health tracking. No personal data stored.</p>
+    {% if error %}<div class="err">{{ error }}</div>{% endif %}
+    <form method="POST">
+      <label>Username</label>
+      <input type="text" name="username" autofocus required>
+      <label>Password</label>
+      <input type="password" name="password" required>
+      <button type="submit">Log In</button>
+    </form>
+  </div>
+</body>
+</html>

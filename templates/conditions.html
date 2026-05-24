@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+  <h1 style="margin:0;">Conditions</h1>
+  <a href="/conditions/add" class="btn btn-primary">+ Add Condition</a>
+</div>
+{% if conditions %}
+<div class="card">
+<table>
+  <thead><tr><th>#</th><th>Name</th><th>Diagnosed</th><th>ICD Code</th><th>Status</th><th>Actions</th></tr></thead>
+  <tbody>
+  {% for c in conditions %}
+  <tr>
+    <td>{{ c.id }}</td>
+    <td><a href="/conditions/{{ c.id }}" style="color:#2b4a8c;font-weight:600;">{{ c.name }}</a></td>
+    <td>{{ c.diagnosed_date or '—' }}</td>
+    <td>{{ c.icd_code or '—' }}</td>
+    <td><span class="badge {% if c.status=='active' %}badge-orange{% elif c.status=='resolved' %}badge-green{% else %}badge-blue{% endif %}">{{ c.status }}</span></td>
+    <td><a href="/conditions/{{ c.id }}/history" class="btn btn-secondary btn-sm">History</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<div class="card"><p style="color:#718096;">No conditions yet. <a href="/conditions/add">Add your first condition</a>.</p></div>
+{% endif %}
+{% endblock %}
