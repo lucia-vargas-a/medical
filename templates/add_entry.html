@@ -3,7 +3,7 @@
 {% block content %}
 <a class="back" href="/conditions/{{ condition.id }}">← {{ condition.name }}</a>
 <h1>New entry</h1>
-<h2>Fill in only what is relevant. All fields are optional except date.</h2>
+<h2>All fields are optional except date.</h2>
 
 <form method="POST">
 
@@ -18,37 +18,37 @@
   <div class="card">
     <h3>Symptoms</h3>
     <div class="field"><label>What are you feeling? Physical symptoms, sensations, pain…</label>
-    <textarea name="symptoms" placeholder="e.g. Sharp pain in lower back, stiffness in the morning…"></textarea></div>
+    <textarea name="symptoms" placeholder="<symptoms>"></textarea></div>
   </div>
 
   <div class="card">
     <h3>Events</h3>
     <div class="field"><label>What happened? Triggers, incidents, flare-ups…</label>
-    <textarea name="events" placeholder="e.g. Sudden flare after long commute…"></textarea></div>
+    <textarea name="events" placeholder="<events, environment>"></textarea></div>
   </div>
 
   <div class="card">
     <h3>Context</h3>
     <div class="field"><label>What were you doing? Where were you? What was happening around you?</label>
-    <textarea name="context" placeholder="e.g. Worked from home all day, high-stress week, cold weather…"></textarea></div>
+    <textarea name="context" placeholder="<environment details>"></textarea></div>
   </div>
 
   <div class="card">
     <h3>Observations</h3>
     <div class="field"><label>Patterns you notice, what seems to help or worsen…</label>
-    <textarea name="observations" placeholder="e.g. Always worse in the afternoon, heat pack brings relief…"></textarea></div>
+    <textarea name="observations" placeholder="<observations>"></textarea></div>
   </div>
 
   <div class="card">
     <h3>Doctor</h3>
     <div class="field"><label>Visit, what was said, recommended… (avoid names)</label>
-    <textarea name="doctor" placeholder="e.g. Physio visit — ultrasound, rest for 5 days, follow-up in 2 weeks…"></textarea></div>
+    <textarea name="doctor" placeholder="<doctor, context, what was checked, said.>"></textarea></div>
   </div>
 
   <div class="card">
     <h3>Medications</h3>
     <div class="field"><label>Medications taken, dosage, timing, effect…</label>
-    <textarea name="medications" placeholder="e.g. Ibuprofen 400mg at 9am — pain reduced within an hour…"></textarea></div>
+    <textarea name="medications" placeholder="medications"></textarea></div>
   </div>
 
   <div class="card">
@@ -56,7 +56,7 @@
     <div id="act-container">
       <div class="rep-row" data-g="act">
         <div class="field" style="margin:0"><label>Activity</label><input type="text" name="activity_name[]" placeholder="e.g. 30 min walk, yoga…"></div>
-        <div class="field" style="margin:0"><label>Feeling after</label><input type="text" name="activity_feeling[]" placeholder="e.g. Looser, more painful…"></div>
+        <div class="field" style="margin:0"><label>Feeling after</label><input type="text" name="activity_feeling[]" placeholder="<feeling during or after the activity>"></div>
         <button type="button" class="remove-btn" onclick="removeRow(this)">✕</button>
       </div>
     </div>
@@ -67,8 +67,8 @@
     <h3>Diet & how you feel with certain foods</h3>
     <div id="diet-container">
       <div class="rep-row" data-g="diet">
-        <div class="field" style="margin:0"><label>Food / drink</label><input type="text" name="diet_food[]" placeholder="e.g. Coffee, dairy, gluten…"></div>
-        <div class="field" style="margin:0"><label>How did you feel?</label><input type="text" name="diet_feeling[]" placeholder="e.g. Bloating, no reaction…"></div>
+        <div class="field" style="margin:0"><label>Food / drink</label><input type="text" name="diet_food[]" placeholder="<food>"></div>
+        <div class="field" style="margin:0"><label>How did you feel?</label><input type="text" name="diet_feeling[]" placeholder="<feeeling or impact>"></div>
         <button type="button" class="remove-btn" onclick="removeRow(this)">✕</button>
       </div>
     </div>
@@ -79,7 +79,7 @@
     <h3>Links & images</h3>
     <div id="att-container">
       <div class="rep-row" data-g="att">
-        <div class="field" style="margin:0"><label>Label (optional)</label><input type="text" name="att_label[]" placeholder="e.g. MRI result, photo"></div>
+        <div class="field" style="margin:0"><label>Label (optional)</label><input type="text" name="att_label[]" placeholder="<link to relevant images or files>"></div>
         <div class="field" style="margin:0"><label>URL</label><input type="url" name="att_url[]" placeholder="https://…"></div>
         <button type="button" class="remove-btn" onclick="removeRow(this)">✕</button>
       </div>
