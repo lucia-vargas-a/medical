@@ -1,74 +1,48 @@
 {% extends "base.html" %}
 {% block title %}{{ condition.name }}{% endblock %}
 {% block content %}
-
-<div style="margin-bottom:1rem">
-  <a href="/" style="color:var(--muted);text-decoration:none;font-size:0.88rem">← All conditions</a>
-</div>
-
-<div class="section-header">
+<a class="back" href="/">← All conditions</a>
+<div class="top">
   <div>
     <h1>{{ condition.name }}</h1>
-    <h2>Tracking since {{ condition.created_at.strftime("%d %b %Y") }} · {{ entries | length }} entr{{ "y" if entries | length == 1 else "ies" }}</h2>
+    <h2>{{ entries | length }} entr{{ "y" if entries | length == 1 else "ies" }}</h2>
   </div>
-  <div style="display:flex;gap:0.6rem;align-items:center">
+  <div class="actions">
     <a class="btn btn-primary" href="/conditions/{{ condition.id }}/entries/add">+ New entry</a>
-    <form method="POST" action="/conditions/{{ condition.id }}/delete"
-          onsubmit="return confirm('Delete this entire condition and all its entries?')">
-      <button class="btn btn-secondary btn-sm" type="submit">Delete condition</button>
+    <form method="POST" action="/conditions/{{ condition.id }}/delete" onsubmit="return confirm('Delete this condition and all its entries?')">
+      <button class="btn btn-secondary btn-sm" type="submit">Delete</button>
     </form>
   </div>
 </div>
 
 {% if condition.notes %}
-  <div class="card" style="margin-bottom:1.5rem;color:var(--muted);font-size:0.9rem">
-    {{ condition.notes }}
-  </div>
+  <div class="card" style="color:var(--muted);font-size:0.88rem;margin-bottom:1.5rem">{{ condition.notes }}</div>
 {% endif %}
 
 {% if entries %}
   <ul class="entry-list">
     {% for e in entries %}
-      <a class="entry-item" href="/entries/{{ e.id }}">
-        <div class="entry-date">{{ e.entry_at.strftime("%d %b %Y") }}<br>{{ e.entry_at.strftime("%H:%M") }}</div>
-        <div class="entry-preview">
-          {% if e.symptoms %}
-            <strong>{{ e.symptoms[:100] }}{% if e.symptoms|length > 100 %}…{% endif %}</strong>
-          {% elif e.events %}
-            <strong>{{ e.events[:100] }}{% if e.events|length > 100 %}…{% endif %}</strong>
-          {% elif e.observations %}
-            <strong>{{ e.observations[:100] }}{% if e.observations|length > 100 %}…{% endif %}</strong>
-          {% else %}
-            <span style="color:var(--border)">No text recorded</span>
-          {% endif %}
-          {% set parts = [] %}
-          {% if e.context %}{% set _ = parts.append("context") %}{% endif %}
-          {% if e.doctor %}{% set _ = parts.append("doctor") %}{% endif %}
-          {% if e.medications %}{% set _ = parts.append("medications") %}{% endif %}
-          {% if parts %}
-            <span style="font-size:0.8rem">{{ parts | join(" · ") }}</span>
-          {% endif %}
+      <a class="entry-row" href="/entries/{{ e.id }}">
+        <div class="edate">{{ e.entry_at.strftime("%d %b %Y") }}<br>{{ e.entry_at.strftime("%H:%M") }}</div>
+        <div class="etext">
+          {% if e.symptoms %}<strong>{{ e.symptoms[:100] }}{% if e.symptoms|length > 100 %}…{% endif %}</strong>
+          {% elif e.events %}<strong>{{ e.events[:100] }}{% if e.events|length > 100 %}…{% endif %}</strong>
+          {% elif e.observations %}<strong>{{ e.observations[:100] }}{% if e.observations|length > 100 %}…{% endif %}</strong>
+          {% else %}<span style="color:var(--border)">No text recorded</span>{% endif %}
         </div>
-        <div class="entry-badges">
-          {% if e.activities %}
-            <span class="badge">{{ e.activities | length }} activit{{ "y" if e.activities | length == 1 else "ies" }}</span>
-          {% endif %}
-          {% if e.diet_items %}
-            <span class="badge">{{ e.diet_items | length }} diet</span>
-          {% endif %}
-          {% if e.attachments %}
-            <span class="badge">{{ e.attachments | length }} link{{ "s" if e.attachments | length != 1 }}</span>
-          {% endif %}
+        <div class="ebadges">
+          {% if e.activities %}<span class="badge">{{ e.activities|length }} activit{{ "y" if e.activities|length==1 else "ies" }}</span>{% endif %}
+          {% if e.diet_items %}<span class="badge">{{ e.diet_items|length }} diet</span>{% endif %}
+          {% if e.attachments %}<span class="badge">{{ e.attachments|length }} link{{ "s" if e.attachments|length!=1 }}</span>{% endif %}
         </div>
       </a>
     {% endfor %}
   </ul>
 {% else %}
-  <div class="empty-state">
-    <div class="icon">📓</div>
-    <p>No entries yet. Start tracking by adding your first journal entry.</p>
+  <div class="empty">
+    <div class="ic">📓</div>
+    <p>No entries yet.</p>
     <a class="btn btn-primary" href="/conditions/{{ condition.id }}/entries/add">+ Add first entry</a>
   </div>
 {% endif %}
-
 {% endblock %}

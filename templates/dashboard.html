@@ -1,44 +1,31 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — Medical Tracker{% endblock %}
+{% block title %}Dashboard{% endblock %}
 {% block content %}
-
-<div class="section-header">
-  <div>
-    <h1>Your conditions</h1>
-    <h2>Select one to view its journal, or add a new condition below.</h2>
-  </div>
+<div class="top">
+  <div><h1>Your conditions</h1><h2>Select a condition to view its journal.</h2></div>
   <a class="btn btn-primary" href="/conditions/add">+ New condition</a>
 </div>
 
 {% if conditions %}
-  <div class="condition-grid">
+  <div class="cond-grid">
     {% for c in conditions %}
-      <a class="condition-card" href="/conditions/{{ c.id }}">
+      <a class="cond-card" href="/conditions/{{ c.id }}">
         <h4>{{ c.name }}</h4>
-        <div class="meta">
-          Tracking since {{ c.created_at.strftime("%d %b %Y") }}
-          &nbsp;·&nbsp;
-          {{ c.entries | length }} entr{{ "y" if c.entries | length == 1 else "ies" }}
+        <div class="meta">Since {{ c.created_at.strftime("%d %b %Y") }} · {{ c.entries | length }} entr{{ "y" if c.entries | length == 1 else "ies" }}</div>
+        <div class="last">
+          {% if c.latest %}
+            Last: {{ c.latest.entry_at.strftime("%d %b %Y, %H:%M") }}
+            {% if c.latest.symptoms %}<br><span style="color:var(--text)">{{ c.latest.symptoms[:80] }}{% if c.latest.symptoms|length > 80 %}…{% endif %}</span>{% endif %}
+          {% else %}No entries yet{% endif %}
         </div>
-        {% if c.latest %}
-          <div class="last-entry">
-            Last entry: {{ c.latest.entry_at.strftime("%d %b %Y, %H:%M") }}
-            {% if c.latest.symptoms %}
-              <br><span style="color:#e2e8f0">{{ c.latest.symptoms[:80] }}{% if c.latest.symptoms|length > 80 %}…{% endif %}</span>
-            {% endif %}
-          </div>
-        {% else %}
-          <div class="last-entry">No entries yet</div>
-        {% endif %}
       </a>
     {% endfor %}
   </div>
 {% else %}
-  <div class="empty-state">
-    <div class="icon">🩺</div>
-    <p>No conditions yet. Add your first one to start tracking.</p>
-    <a class="btn btn-primary" href="/conditions/add">+ Add condition</a>
+  <div class="empty">
+    <div class="ic">🩺</div>
+    <p>No conditions yet.</p>
+    <a class="btn btn-primary" href="/conditions/add">+ Add first condition</a>
   </div>
 {% endif %}
-
 {% endblock %}

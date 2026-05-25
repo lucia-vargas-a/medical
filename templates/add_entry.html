@@ -1,147 +1,93 @@
 {% extends "base.html" %}
 {% block title %}New entry — {{ condition.name }}{% endblock %}
 {% block content %}
+<a class="back" href="/conditions/{{ condition.id }}">← {{ condition.name }}</a>
+<h1>New entry</h1>
+<h2>Fill in only what is relevant. All fields are optional except date.</h2>
 
-<div style="margin-bottom:1rem">
-  <a href="/conditions/{{ condition.id }}" style="color:var(--muted);text-decoration:none;font-size:0.88rem">← {{ condition.name }}</a>
-</div>
+<form method="POST">
 
-<h1 style="margin-bottom:0.25rem">New journal entry</h1>
-<p style="color:var(--muted);font-size:0.9rem;margin-bottom:2rem">Fill in only what's relevant. All fields are optional except date.</p>
-
-<form method="POST" id="entryForm">
-
-  <!-- ── Date & Time ───────────────────────────────────────── -->
   <div class="card">
     <h3>When</h3>
-    <div class="field-row">
-      <div class="field">
-        <label>Date *</label>
-        <input type="date" name="entry_date" value="{{ now_date }}" required>
-      </div>
-      <div class="field">
-        <label>Time</label>
-        <input type="time" name="entry_time" value="{{ now_time }}">
-      </div>
+    <div class="row2">
+      <div class="field"><label>Date *</label><input type="date" name="entry_date" value="{{ now_date }}" required></div>
+      <div class="field"><label>Time</label><input type="time" name="entry_time" value="{{ now_time }}"></div>
     </div>
   </div>
 
-  <!-- ── Symptoms ──────────────────────────────────────────── -->
   <div class="card">
     <h3>Symptoms</h3>
-    <div class="field">
-      <label>What are you feeling? Physical symptoms, sensations, pain…</label>
-      <textarea name="symptoms" placeholder="e.g. Sharp pain in lower back, radiating to left leg. Worse when sitting. Stiffness in the morning.">{{ form.symptoms if form else '' }}</textarea>
-    </div>
+    <div class="field"><label>What are you feeling? Physical symptoms, sensations, pain…</label>
+    <textarea name="symptoms" placeholder="e.g. Sharp pain in lower back, stiffness in the morning…"></textarea></div>
   </div>
 
-  <!-- ── Events ────────────────────────────────────────────── -->
   <div class="card">
     <h3>Events</h3>
-    <div class="field">
-      <label>What happened? Triggers, incidents, flare-ups…</label>
-      <textarea name="events" placeholder="e.g. Woke up with sudden flare. Dropped something heavy yesterday. Flare started after commute.">{{ form.events if form else '' }}</textarea>
-    </div>
+    <div class="field"><label>What happened? Triggers, incidents, flare-ups…</label>
+    <textarea name="events" placeholder="e.g. Sudden flare after long commute…"></textarea></div>
   </div>
 
-  <!-- ── Context ───────────────────────────────────────────── -->
   <div class="card">
     <h3>Context</h3>
-    <div class="field">
-      <label>What were you doing? Where were you? What was happening in your environment?</label>
-      <textarea name="context" placeholder="e.g. Working from home all day, sat in a bad chair. High-stress week at work. Cold and rainy weather.">{{ form.context if form else '' }}</textarea>
-    </div>
+    <div class="field"><label>What were you doing? Where were you? What was happening around you?</label>
+    <textarea name="context" placeholder="e.g. Worked from home all day, high-stress week, cold weather…"></textarea></div>
   </div>
 
-  <!-- ── Observations ──────────────────────────────────────── -->
   <div class="card">
     <h3>Observations</h3>
-    <div class="field">
-      <label>Your own observations, patterns you notice, what seems to help or worsen…</label>
-      <textarea name="observations" placeholder="e.g. Pain always worse in the afternoon. Seems connected to sleep quality. Heat pack brings some relief.">{{ form.observations if form else '' }}</textarea>
-    </div>
+    <div class="field"><label>Patterns you notice, what seems to help or worsen…</label>
+    <textarea name="observations" placeholder="e.g. Always worse in the afternoon, heat pack brings relief…"></textarea></div>
   </div>
 
-  <!-- ── Doctor ────────────────────────────────────────────── -->
   <div class="card">
-    <h3>Doctor / Healthcare</h3>
-    <div class="field">
-      <label>Visited a doctor? What was said, recommended, prescribed? (Use codes instead of names)</label>
-      <textarea name="doctor" placeholder="e.g. DR-1 (physio): ultrasound applied, recommended rest for 5 days, follow-up in 2 weeks.">{{ form.doctor if form else '' }}</textarea>
-    </div>
+    <h3>Doctor</h3>
+    <div class="field"><label>Visit, what was said, recommended… (avoid names)</label>
+    <textarea name="doctor" placeholder="e.g. Physio visit — ultrasound, rest for 5 days, follow-up in 2 weeks…"></textarea></div>
   </div>
 
-  <!-- ── Medications ───────────────────────────────────────── -->
   <div class="card">
     <h3>Medications</h3>
-    <div class="field">
-      <label>Medications taken, dosage, timing, how you felt after…</label>
-      <textarea name="medications" placeholder="e.g. Ibuprofen 400mg at 9am — reduced pain to 4/10 within an hour. Diclofenac gel applied at noon.">{{ form.medications if form else '' }}</textarea>
-    </div>
+    <div class="field"><label>Medications taken, dosage, timing, effect…</label>
+    <textarea name="medications" placeholder="e.g. Ibuprofen 400mg at 9am — pain reduced within an hour…"></textarea></div>
   </div>
 
-  <!-- ── Activities ────────────────────────────────────────── -->
   <div class="card">
     <h3>Activity & how you felt after</h3>
-    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">Add as many activities as you want. Each one gets its own "feeling after" field.</p>
-    <div id="activities-container">
-      <div class="repeatable-row" data-group="activity">
-        <div class="field" style="margin:0">
-          <label>Activity</label>
-          <input type="text" name="activity_name[]" placeholder="e.g. 30 min walk, yoga, swimming…">
-        </div>
-        <div class="field" style="margin:0">
-          <label>How did you feel after?</label>
-          <input type="text" name="activity_feeling[]" placeholder="e.g. Looser, more painful, tired but good…">
-        </div>
-        <button type="button" class="remove-btn" onclick="removeRow(this)" title="Remove">✕</button>
+    <div id="act-container">
+      <div class="rep-row" data-g="act">
+        <div class="field" style="margin:0"><label>Activity</label><input type="text" name="activity_name[]" placeholder="e.g. 30 min walk, yoga…"></div>
+        <div class="field" style="margin:0"><label>Feeling after</label><input type="text" name="activity_feeling[]" placeholder="e.g. Looser, more painful…"></div>
+        <button type="button" class="remove-btn" onclick="removeRow(this)">✕</button>
       </div>
     </div>
-    <button type="button" class="add-row-btn" onclick="addActivity()">+ Add another activity</button>
+    <button type="button" class="add-btn" onclick="addRow('act-container')">+ Add activity</button>
   </div>
 
-  <!-- ── Diet ─────────────────────────────────────────────── -->
   <div class="card">
     <h3>Diet & how you feel with certain foods</h3>
-    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">Log what you ate or drank and how your body responded.</p>
     <div id="diet-container">
-      <div class="repeatable-row" data-group="diet">
-        <div class="field" style="margin:0">
-          <label>Food / drink</label>
-          <input type="text" name="diet_food[]" placeholder="e.g. Coffee, gluten, alcohol, dairy…">
-        </div>
-        <div class="field" style="margin:0">
-          <label>How did you feel?</label>
-          <input type="text" name="diet_feeling[]" placeholder="e.g. Bloating after, no reaction, flare 2h later…">
-        </div>
-        <button type="button" class="remove-btn" onclick="removeRow(this)" title="Remove">✕</button>
+      <div class="rep-row" data-g="diet">
+        <div class="field" style="margin:0"><label>Food / drink</label><input type="text" name="diet_food[]" placeholder="e.g. Coffee, dairy, gluten…"></div>
+        <div class="field" style="margin:0"><label>How did you feel?</label><input type="text" name="diet_feeling[]" placeholder="e.g. Bloating, no reaction…"></div>
+        <button type="button" class="remove-btn" onclick="removeRow(this)">✕</button>
       </div>
     </div>
-    <button type="button" class="add-row-btn" onclick="addDiet()">+ Add another food / drink</button>
+    <button type="button" class="add-btn" onclick="addRow('diet-container')">+ Add food / drink</button>
   </div>
 
-  <!-- ── Attachments (links + images) ─────────────────────── -->
   <div class="card">
     <h3>Links & images</h3>
-    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">Attach as many URLs or image links as you need (lab results, scan links, photos…).</p>
-    <div id="attachments-container">
-      <div class="repeatable-row" data-group="attachment">
-        <div class="field" style="margin:0">
-          <label>Label (optional)</label>
-          <input type="text" name="att_label[]" placeholder="e.g. MRI result, blood test, photo">
-        </div>
-        <div class="field" style="margin:0">
-          <label>URL or image link</label>
-          <input type="url" name="att_url[]" placeholder="https://…">
-        </div>
-        <button type="button" class="remove-btn" onclick="removeRow(this)" title="Remove">✕</button>
+    <div id="att-container">
+      <div class="rep-row" data-g="att">
+        <div class="field" style="margin:0"><label>Label (optional)</label><input type="text" name="att_label[]" placeholder="e.g. MRI result, photo"></div>
+        <div class="field" style="margin:0"><label>URL</label><input type="url" name="att_url[]" placeholder="https://…"></div>
+        <button type="button" class="remove-btn" onclick="removeRow(this)">✕</button>
       </div>
     </div>
-    <button type="button" class="add-row-btn" onclick="addAttachment()">+ Add another link</button>
+    <button type="button" class="add-btn" onclick="addRow('att-container')">+ Add link</button>
   </div>
 
-  <!-- ── Submit ────────────────────────────────────────────── -->
-  <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
+  <div class="actions" style="margin-top:0.5rem">
     <button class="btn btn-primary" type="submit">Save entry</button>
     <a class="btn btn-secondary" href="/conditions/{{ condition.id }}">Cancel</a>
   </div>
@@ -150,29 +96,21 @@
 
 <script>
 function removeRow(btn) {
-  const row = btn.closest('[data-group]');
+  const row = btn.closest('[data-g]');
   const container = row.parentElement;
-  // Keep at least one row
-  if (container.querySelectorAll('[data-group]').length > 1) {
+  if (container.querySelectorAll('[data-g]').length > 1) {
     row.remove();
   } else {
-    // Just clear inputs instead of removing
     row.querySelectorAll('input, textarea').forEach(el => el.value = '');
   }
 }
-
-function cloneRow(containerId, namePrefix) {
+function addRow(containerId) {
   const container = document.getElementById(containerId);
-  const firstRow = container.querySelector('[data-group]');
-  const newRow = firstRow.cloneNode(true);
-  newRow.querySelectorAll('input, textarea').forEach(el => el.value = '');
-  container.appendChild(newRow);
-  newRow.querySelector('input, textarea').focus();
+  const first = container.querySelector('[data-g]');
+  const clone = first.cloneNode(true);
+  clone.querySelectorAll('input, textarea').forEach(el => el.value = '');
+  container.appendChild(clone);
+  clone.querySelector('input, textarea').focus();
 }
-
-function addActivity()   { cloneRow('activities-container'); }
-function addDiet()       { cloneRow('diet-container'); }
-function addAttachment() { cloneRow('attachments-container'); }
 </script>
-
 {% endblock %}

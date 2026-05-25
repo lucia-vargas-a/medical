@@ -1,25 +1,16 @@
-"""
-privacy.py
-----------
-Detects and blocks personal information from being saved to the database.
-Checks for: emails, phone numbers, full names.
-URLs are now ALLOWED (they're used for attachments).
-"""
 import re
 
 PATTERNS_ICASE = {
-    "email address":  r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}",
-    "phone number":   r"(\+?\d[\s\-\.]?){8,15}",
-    "ID or passport number": r"\b[A-Z]{1,3}\d{6,9}\b",
+    "email address": r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}",
+    "phone number":  r"(\+?\d[\s\-\.]?){8,15}",
 }
 
-# Case-sensitive: only matches ProperCase ProperCase (real names)
 PATTERNS_CASE = {
     "full name (First Last)": r"\b[A-Z][a-z]{2,}\s[A-Z][a-z]{2,}\b",
 }
 
 
-def check_for_personal_info(text: str) -> list:
+def check_for_personal_info(text):
     if not text or not isinstance(text, str):
         return []
     violations = []
@@ -32,15 +23,10 @@ def check_for_personal_info(text: str) -> list:
     return violations
 
 
-def is_clean(text: str) -> bool:
-    return len(check_for_personal_info(text)) == 0
-
-
-def validate_fields(fields: dict) -> dict:
+def validate_fields(fields):
     all_errors = []
     for field_name, value in fields.items():
-        violations = check_for_personal_info(str(value))
-        for v in violations:
+        for v in check_for_personal_info(str(value)):
             all_errors.append(
                 f"Field '{field_name}' appears to contain a {v}. Please remove personal information."
             )
