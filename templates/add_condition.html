@@ -1,45 +1,34 @@
 {% extends "base.html" %}
+{% block title %}New condition{% endblock %}
 {% block content %}
-<h1>Add Condition</h1>
-<div class="privacy-note">🔒 Do not enter personal names or contact info. Use codes only.</div>
-<div class="card">
-<form method="POST">
-  <div class="grid2">
-    <div class="form-group">
-      <label>Condition Name *</label>
-      <input type="text" name="name" value="{{ form.get('name','') }}" placeholder="e.g. Rheumatoid Arthritis" required>
-    </div>
-    <div class="form-group">
-      <label>ICD Code (optional)</label>
-      <input type="text" name="icd_code" value="{{ form.get('icd_code','') }}" placeholder="e.g. M06.9">
-    </div>
-    <div class="form-group">
-      <label>Date Diagnosed</label>
-      <input type="date" name="diagnosed_date" value="{{ form.get('diagnosed_date','') }}">
-    </div>
-    <div class="form-group">
-      <label>Status</label>
-      <select name="status">
-        <option value="active">Active</option>
-        <option value="monitoring">Monitoring</option>
-        <option value="resolved">Resolved</option>
-      </select>
-    </div>
-  </div>
-  <div class="form-group">
-    <label>Body Parts Affected (hold Ctrl/Cmd to select multiple)</label>
-    <select name="body_parts" multiple style="height:140px;">
-      {% for part in ['Hand (L)','Hand (R)','Wrist (L)','Wrist (R)','Elbow (L)','Elbow (R)','Shoulder (L)','Shoulder (R)','Neck','Upper Back','Lower Back','Hip (L)','Hip (R)','Knee (L)','Knee (R)','Ankle (L)','Ankle (R)','Foot (L)','Foot (R)','Jaw','Chest','Abdomen','Other'] %}
-      <option value="{{ part }}">{{ part }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="form-group">
-    <label>Notes (no personal info)</label>
-    <textarea name="notes" placeholder="e.g. Symptoms began after injury in 2023. Affects daily walking.">{{ form.get('notes','') }}</textarea>
-  </div>
-  <button type="submit" class="btn btn-primary">Save Condition</button>
-  <a href="/conditions" class="btn btn-secondary" style="margin-left:10px;">Cancel</a>
-</form>
+
+<div style="margin-bottom:1.5rem">
+  <a href="/" style="color:var(--muted);text-decoration:none;font-size:0.88rem">← Back</a>
 </div>
+
+<h1 style="margin-bottom:0.5rem">New condition</h1>
+<p style="color:var(--muted);font-size:0.9rem;margin-bottom:2rem">Enter the condition you want to start tracking over time.</p>
+
+<div class="card">
+  <form method="POST">
+
+    <div class="field">
+      <label>Condition name *</label>
+      <input type="text" name="name" placeholder="e.g. Lower back pain, Psoriasis, Migraine…"
+             value="{{ form.name if form else '' }}" autofocus required>
+    </div>
+
+    <div class="field">
+      <label>Initial notes <span style="color:var(--border)">optional</span></label>
+      <textarea name="notes" placeholder="Any context you want to remember about this condition…">{{ form.notes if form else '' }}</textarea>
+    </div>
+
+    <div style="display:flex;gap:0.75rem">
+      <button class="btn btn-primary" type="submit">Create condition</button>
+      <a class="btn btn-secondary" href="/">Cancel</a>
+    </div>
+
+  </form>
+</div>
+
 {% endblock %}

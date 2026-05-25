@@ -1,105 +1,44 @@
 {% extends "base.html" %}
+{% block title %}Dashboard — Medical Tracker{% endblock %}
 {% block content %}
-<h1>Dashboard</h1>
 
-<div class="grid3" style="margin-bottom:24px;">
-  <div class="card" style="text-align:center;">
-    <div style="font-size:32px;font-weight:700;color:#2b4a8c;">{{ conditions|length }}</div>
-    <div style="font-size:13px;color:#718096;margin-top:4px;">Conditions tracked</div>
+<div class="section-header">
+  <div>
+    <h1>Your conditions</h1>
+    <h2>Select one to view its journal, or add a new condition below.</h2>
   </div>
-  <div class="card" style="text-align:center;">
-    <div style="font-size:32px;font-weight:700;color:#2b4a8c;">{{ recent_logs|length }}</div>
-    <div style="font-size:13px;color:#718096;margin-top:4px;">Recent symptom logs</div>
-  </div>
-  <div class="card" style="text-align:center;">
-    <div style="font-size:32px;font-weight:700;color:#2b4a8c;">{{ recent_appointments|length }}</div>
-    <div style="font-size:13px;color:#718096;margin-top:4px;">Recent appointments</div>
-  </div>
+  <a class="btn btn-primary" href="/conditions/add">+ New condition</a>
 </div>
 
-<div class="grid2">
-  <div>
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <h2 style="margin:0;">Your Conditions</h2>
-        <a href="/conditions/add" class="btn btn-primary btn-sm">+ Add</a>
-      </div>
-      {% if conditions %}
-        {% for c in conditions %}
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #edf2f7;">
-          <div>
-            <a href="/conditions/{{ c.id }}" style="font-weight:600;color:#2b4a8c;text-decoration:none;">
-              #{{ c.id }} — {{ c.name }}
-            </a>
-            {% if c.diagnosed_date %}
-            <div style="font-size:12px;color:#718096;">Diagnosed {{ c.diagnosed_date }}</div>
+{% if conditions %}
+  <div class="condition-grid">
+    {% for c in conditions %}
+      <a class="condition-card" href="/conditions/{{ c.id }}">
+        <h4>{{ c.name }}</h4>
+        <div class="meta">
+          Tracking since {{ c.created_at.strftime("%d %b %Y") }}
+          &nbsp;·&nbsp;
+          {{ c.entries | length }} entr{{ "y" if c.entries | length == 1 else "ies" }}
+        </div>
+        {% if c.latest %}
+          <div class="last-entry">
+            Last entry: {{ c.latest.entry_at.strftime("%d %b %Y, %H:%M") }}
+            {% if c.latest.symptoms %}
+              <br><span style="color:#e2e8f0">{{ c.latest.symptoms[:80] }}{% if c.latest.symptoms|length > 80 %}…{% endif %}</span>
             {% endif %}
           </div>
-          <span class="badge {% if c.status == 'active' %}badge-orange{% elif c.status == 'resolved' %}badge-green{% else %}badge-blue{% endif %}">
-            {{ c.status }}
-          </span>
-        </div>
-        {% endfor %}
-      {% else %}
-        <p style="color:#718096;font-size:14px;">No conditions yet. <a href="/conditions/add">Add one</a>.</p>
-      {% endif %}
-    </div>
-
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <h2 style="margin:0;">Quick Actions</h2>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <a href="/log/add" class="btn btn-primary">📊 Log Symptoms Now</a>
-        <a href="/appointments/add" class="btn btn-secondary">📅 Log Appointment</a>
-        <a href="/treatments/add" class="btn btn-secondary">💊 Log Treatment</a>
-        <a href="/doctors/add" class="btn btn-secondary">🩺 Add Doctor Code</a>
-      </div>
-    </div>
+        {% else %}
+          <div class="last-entry">No entries yet</div>
+        {% endif %}
+      </a>
+    {% endfor %}
   </div>
-
-  <div>
-    <div class="card">
-      <h2>Recent Symptom Logs</h2>
-      {% if recent_logs %}
-        {% for log in recent_logs %}
-        <div style="padding:10px 0;border-bottom:1px solid #edf2f7;">
-          <div style="display:flex;justify-content:space-between;">
-            <span style="font-weight:600;font-size:13px;">{{ log.condition.name }}</span>
-            <span style="font-size:12px;color:#718096;">{{ log.logged_at.strftime('%d %b %Y %H:%M') }}</span>
-          </div>
-          {% if log.body_part %}<div style="font-size:12px;color:#718096;">{{ log.body_part }}</div>{% endif %}
-          <div style="display:flex;gap:12px;margin-top:6px;font-size:12px;">
-            <span>Pain: <strong>{{ log.pain_level }}/10</strong></span>
-            <span>Heat: <strong>{{ log.heat_level }}/10</strong></span>
-            <span>Swelling: <strong>{{ log.swelling_level }}/10</strong></span>
-          </div>
-        </div>
-        {% endfor %}
-      {% else %}
-        <p style="color:#718096;font-size:14px;">No symptom logs yet.</p>
-      {% endif %}
-    </div>
-
-    <div class="card">
-      <h2>Recent Appointments</h2>
-      {% if recent_appointments %}
-        {% for appt in recent_appointments %}
-        <div style="padding:10px 0;border-bottom:1px solid #edf2f7;">
-          <div style="display:flex;justify-content:space-between;">
-            <span style="font-weight:600;font-size:13px;">{{ appt.condition.name }}</span>
-            <span style="font-size:12px;color:#718096;">{{ appt.appointment_date }}</span>
-          </div>
-          {% if appt.doctor_id %}<div style="font-size:12px;color:#718096;">Doctor {{ appt.doctor_id }}</div>{% endif %}
-          {% if appt.waiting_days is not none %}
-          <div style="font-size:12px;color:#718096;">Waited {{ appt.waiting_days }} days</div>
-          {% endif %}
-        </div>
-        {% endfor %}
-      {% else %}
-        <p style="color:#718096;font-size:14px;">No appointments yet.</p>
-      {% endif %}
-    </div>
+{% else %}
+  <div class="empty-state">
+    <div class="icon">🩺</div>
+    <p>No conditions yet. Add your first one to start tracking.</p>
+    <a class="btn btn-primary" href="/conditions/add">+ Add condition</a>
   </div>
-</div>
+{% endif %}
+
 {% endblock %}

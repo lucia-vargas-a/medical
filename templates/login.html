@@ -2,34 +2,87 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Login — Medical Tracker</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f0f4f8; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .box { background: white; border-radius: 12px; padding: 40px; width: 360px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-    h1 { font-size: 22px; color: #1a202c; margin-bottom: 6px; }
-    p { font-size: 13px; color: #718096; margin-bottom: 28px; }
-    label { display: block; font-size: 13px; font-weight: 600; color: #4a5568; margin-bottom: 5px; }
-    input { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e0; border-radius: 7px; font-size: 14px; margin-bottom: 16px; }
-    input:focus { outline: none; border-color: #2b4a8c; }
-    button { width: 100%; padding: 11px; background: #2b4a8c; color: white; border: none; border-radius: 7px; font-size: 15px; font-weight: 600; cursor: pointer; }
-    button:hover { background: #1e3a7a; }
-    .err { background: #fff5f5; border: 1px solid #fed7d7; color: #c53030; border-radius: 7px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
-    .icon { font-size: 36px; margin-bottom: 14px; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@600&display=swap');
+    body {
+      font-family: "Inter", system-ui, sans-serif;
+      background: #0e1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .box {
+      background: #161b27;
+      border: 1px solid #2a3245;
+      border-radius: 12px;
+      padding: 2.5rem 2rem;
+      width: 100%;
+      max-width: 380px;
+    }
+    .logo {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #4f8ef7;
+      margin-bottom: 0.4rem;
+    }
+    .logo span { color: #7a8fa6; }
+    .subtitle { font-size: 0.85rem; color: #7a8fa6; margin-bottom: 2rem; }
+    label { display: block; font-size: 0.83rem; font-weight: 500; color: #7a8fa6; margin-bottom: 0.35rem; }
+    input {
+      width: 100%;
+      background: #0e1117;
+      border: 1px solid #2a3245;
+      border-radius: 7px;
+      color: #e2e8f0;
+      padding: 9px 12px;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+      outline: none;
+    }
+    input:focus { border-color: #4f8ef7; }
+    button {
+      width: 100%;
+      background: #4f8ef7;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+    button:hover { opacity: 0.88; }
+    .error {
+      background: rgba(229,83,83,.12);
+      border: 1px solid rgba(229,83,83,.3);
+      color: #e55353;
+      border-radius: 7px;
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      margin-bottom: 1.25rem;
+    }
   </style>
 </head>
 <body>
   <div class="box">
-    <div class="icon">🏥</div>
-    <h1>Medical Tracker</h1>
-    <p>Private health tracking. No personal data stored.</p>
-    {% if error %}<div class="err">{{ error }}</div>{% endif %}
+    <div class="logo">medical<span>.tracker</span></div>
+    <div class="subtitle">Private health journal</div>
+    {% if error %}
+      <div class="error">{{ error }}</div>
+    {% endif %}
     <form method="POST">
       <label>Username</label>
-      <input type="text" name="username" autofocus required>
+      <input type="text" name="username" autofocus autocomplete="username">
       <label>Password</label>
-      <input type="password" name="password" required>
-      <button type="submit">Log In</button>
+      <input type="password" name="password" autocomplete="current-password">
+      <button type="submit">Sign in</button>
     </form>
   </div>
 </body>

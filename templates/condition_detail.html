@@ -1,68 +1,74 @@
 {% extends "base.html" %}
+{% block title %}{{ condition.name }}{% endblock %}
 {% block content %}
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-  <div>
-    <h1 style="margin-bottom:4px;">#{{ condition.id }} — {{ condition.name }}</h1>
-    <div style="color:#718096;font-size:14px;">
-      {% if condition.diagnosed_date %}Diagnosed {{ condition.diagnosed_date }} · {% endif %}
-      <span class="badge {% if condition.status=='active' %}badge-orange{% elif condition.status=='resolved' %}badge-green{% else %}badge-blue{% endif %}">{{ condition.status }}</span>
-      {% if condition.icd_code %} · ICD: {{ condition.icd_code }}{% endif %}
-    </div>
-  </div>
-  <a href="/conditions/{{ condition.id }}/history" class="btn btn-primary">📋 Full History</a>
+
+<div style="margin-bottom:1rem">
+  <a href="/" style="color:var(--muted);text-decoration:none;font-size:0.88rem">← All conditions</a>
 </div>
 
-{% if condition.body_parts %}
-<div class="card">
-  <h2>Body Parts Affected</h2>
-  <div style="display:flex;flex-wrap:wrap;gap:8px;">
-  {% for bp in condition.body_parts %}
-    <span class="badge badge-blue" style="font-size:13px;padding:5px 14px;">{{ bp.body_part }}</span>
-  {% endfor %}
+<div class="section-header">
+  <div>
+    <h1>{{ condition.name }}</h1>
+    <h2>Tracking since {{ condition.created_at.strftime("%d %b %Y") }} · {{ entries | length }} entr{{ "y" if entries | length == 1 else "ies" }}</h2>
+  </div>
+  <div style="display:flex;gap:0.6rem;align-items:center">
+    <a class="btn btn-primary" href="/conditions/{{ condition.id }}/entries/add">+ New entry</a>
+    <form method="POST" action="/conditions/{{ condition.id }}/delete"
+          onsubmit="return confirm('Delete this entire condition and all its entries?')">
+      <button class="btn btn-secondary btn-sm" type="submit">Delete condition</button>
+    </form>
   </div>
 </div>
+
+{% if condition.notes %}
+  <div class="card" style="margin-bottom:1.5rem;color:var(--muted);font-size:0.9rem">
+    {{ condition.notes }}
+  </div>
 {% endif %}
 
-<div class="grid2">
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <h2 style="margin:0;">Recent Symptom Logs</h2>
-      <a href="/log/add" class="btn btn-primary btn-sm">+ Log</a>
-    </div>
-    {% for log in logs[:5] %}
-    <div style="padding:8px 0;border-bottom:1px solid #edf2f7;font-size:13px;">
-      <div style="display:flex;justify-content:space-between;">
-        <strong>{{ log.body_part or 'General' }}</strong>
-        <span style="color:#718096;">{{ log.logged_at.strftime('%d %b %Y') }}</span>
-      </div>
-      <div style="display:flex;gap:10px;margin-top:4px;">
-        <span>Pain: <strong>{{ log.pain_level }}</strong></span>
-        <span>Heat: <strong>{{ log.heat_level }}</strong></span>
-        <span>Swelling: <strong>{{ log.swelling_level }}</strong></span>
-      </div>
-    </div>
-    {% else %}
-    <p style="color:#718096;font-size:13px;">No logs yet.</p>
+{% if entries %}
+  <ul class="entry-list">
+    {% for e in entries %}
+      <a class="entry-item" href="/entries/{{ e.id }}">
+        <div class="entry-date">{{ e.entry_at.strftime("%d %b %Y") }}<br>{{ e.entry_at.strftime("%H:%M") }}</div>
+        <div class="entry-preview">
+          {% if e.symptoms %}
+            <strong>{{ e.symptoms[:100] }}{% if e.symptoms|length > 100 %}…{% endif %}</strong>
+          {% elif e.events %}
+            <strong>{{ e.events[:100] }}{% if e.events|length > 100 %}…{% endif %}</strong>
+          {% elif e.observations %}
+            <strong>{{ e.observations[:100] }}{% if e.observations|length > 100 %}…{% endif %}</strong>
+          {% else %}
+            <span style="color:var(--border)">No text recorded</span>
+          {% endif %}
+          {% set parts = [] %}
+          {% if e.context %}{% set _ = parts.append("context") %}{% endif %}
+          {% if e.doctor %}{% set _ = parts.append("doctor") %}{% endif %}
+          {% if e.medications %}{% set _ = parts.append("medications") %}{% endif %}
+          {% if parts %}
+            <span style="font-size:0.8rem">{{ parts | join(" · ") }}</span>
+          {% endif %}
+        </div>
+        <div class="entry-badges">
+          {% if e.activities %}
+            <span class="badge">{{ e.activities | length }} activit{{ "y" if e.activities | length == 1 else "ies" }}</span>
+          {% endif %}
+          {% if e.diet_items %}
+            <span class="badge">{{ e.diet_items | length }} diet</span>
+          {% endif %}
+          {% if e.attachments %}
+            <span class="badge">{{ e.attachments | length }} link{{ "s" if e.attachments | length != 1 }}</span>
+          {% endif %}
+        </div>
+      </a>
     {% endfor %}
+  </ul>
+{% else %}
+  <div class="empty-state">
+    <div class="icon">📓</div>
+    <p>No entries yet. Start tracking by adding your first journal entry.</p>
+    <a class="btn btn-primary" href="/conditions/{{ condition.id }}/entries/add">+ Add first entry</a>
   </div>
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <h2 style="margin:0;">Treatments</h2>
-      <a href="/treatments/add" class="btn btn-primary btn-sm">+ Add</a>
-    </div>
-    {% for t in treatments[:5] %}
-    <div style="padding:8px 0;border-bottom:1px solid #edf2f7;font-size:13px;">
-      <div style="display:flex;justify-content:space-between;">
-        <strong>{{ t.name }}</strong>
-        <span class="badge {% if t.outcome=='helped' %}badge-green{% elif t.outcome=='no_relief' %}badge-orange{% elif t.outcome=='made_worse' %}badge-red{% else %}badge-gray{% endif %}">
-          {{ (t.outcome or 'pending')|replace('_',' ')|title }}
-        </span>
-      </div>
-      <div style="color:#718096;">{{ t.treatment_type|title }}</div>
-    </div>
-    {% else %}
-    <p style="color:#718096;font-size:13px;">No treatments yet.</p>
-    {% endfor %}
-  </div>
-</div>
+{% endif %}
+
 {% endblock %}
