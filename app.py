@@ -1,16 +1,27 @@
+"""
+app.py
+------
+Medical Tracker — Flask application.
+Tracks conditions, symptoms, treatments, appointments and doctors.
+"""
+
 import os
-from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from datetime import date, datetime
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from functools import wraps
-from models import db, Condition, Entry, Activity, DietItem, Attachment
+from models import db, Condition, Doctor, Appointment, Treatment, TreatmentResponse, SymptomLog, BodyPartAffected
 from privacy import validate_fields
 
 app = Flask(__name__)
 
+# ── Configuration ─────────────────────────────────────────────────────────────
 app.secret_key = os.environ.get("SECRET_KEY", "change-this-in-production-please")
 DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///medical_tracker.db")
+
+# Railway provides MySQL URL as mysql://... — SQLAlchemy needs mysql+pymysql://
 if DATABASE_URL.startswith("mysql://"):
     DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
+
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -21,7 +32,7 @@ db.init_app(app)
 with app.app_context():
     db.create_all()
 
-
+# ── Auth ──────────────────────────────────────────────────────────────────────
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -29,7 +40,6 @@ def login_required(f):
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return decorated
-
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -41,150 +51,295 @@ def login():
         error = "Invalid username or password."
     return render_template("login.html", error=error)
 
-
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
 
-
+# ── Dashboard ─────────────────────────────────────────────────────────────────
 @app.route("/")
 @login_required
 def dashboard():
     conditions = Condition.query.order_by(Condition.created_at.desc()).all()
-    for c in conditions:
-        c.latest = Entry.query.filter_by(condition_id=c.id).order_by(Entry.entry_at.desc()).first()
-    return render_template("dashboard.html", conditions=conditions)
+    recent_logs = SymptomLog.query.order_by(SymptomLog.logged_at.desc()).limit(5).all()
+    recent_appointments = Appointment.query.order_by(Appointment.appointment_date.desc()).limit(5).all()
+    return render_template("dashboard.html",
+                           conditions=conditions,
+                           recent_logs=recent_logs,
+                           recent_appointments=recent_appointments
+                           )
 
+# ── Conditions ────────────────────────────────────────────────────────────────
+@app.route("/conditions")
+@login_required
+def conditions():
+    all_conditions = Condition.query.order_by(Condition.created_at.desc()).all()
+    return render_template("conditions.html", conditions=all_conditions)
 
 @app.route("/conditions/add", methods=["GET", "POST"])
 @login_required
 def add_condition():
     if request.method == "POST":
-        name  = request.form.get("name", "").strip()
-        notes = request.form.get("notes", "").strip()
-        if not name:
-            flash("Condition name is required.", "danger")
-            return render_template("add_condition.html")
-        check = validate_fields({"name": name, "notes": notes})
+        check = validate_fields({
+            "name":  request.form.get("name", ""),
+            "notes": request.form.get("notes", ""),
+        })
         if not check["ok"]:
             for err in check["errors"]:
                 flash(err, "danger")
-            return render_template("add_condition.html")
-        condition = Condition(name=name, notes=notes or None)
-        db.session.add(condition)
-        db.session.commit()
-        flash(f'Condition "{condition.name}" created.', "success")
-        return redirect(url_for("condition_detail", condition_id=condition.id))
-    return render_template("add_condition.html")
+            return render_template("add_condition.html", form=request.form)
 
+        diagnosed_str = request.form.get("diagnosed_date")
+        diagnosed = datetime.strptime(diagnosed_str, "%Y-%m-%d").date() if diagnosed_str else None
+
+        condition = Condition(
+            name=request.form["name"],
+            diagnosed_date=diagnosed,
+            icd_code=request.form.get("icd_code"),
+            status=request.form.get("status", "active"),
+            notes=request.form.get("notes"),
+        )
+        db.session.add(condition)
+        db.session.flush()
+
+        parts = request.form.getlist("body_parts")
+        for part in parts:
+            if part.strip():
+                bp = BodyPartAffected(
+                    condition_id=condition.id,
+                    body_part=part,
+                    severity=int(request.form.get(f"severity_{part}", 5)),
+                )
+                db.session.add(bp)
+
+        db.session.commit()
+        flash(f"Condition #{condition.id} added successfully.", "success")
+        return redirect(url_for("condition_detail", condition_id=condition.id))
+
+    return render_template("add_condition.html", form={})
 
 @app.route("/conditions/<int:condition_id>")
 @login_required
 def condition_detail(condition_id):
     condition = Condition.query.get_or_404(condition_id)
-    entries = Entry.query.filter_by(condition_id=condition_id).order_by(Entry.entry_at.desc()).all()
-    return render_template("condition_detail.html", condition=condition, entries=entries)
+    logs = SymptomLog.query.filter_by(condition_id=condition_id).order_by(SymptomLog.logged_at.desc()).all()
+    treatments = Treatment.query.filter_by(condition_id=condition_id).order_by(Treatment.start_date.desc()).all()
+    appointments = Appointment.query.filter_by(condition_id=condition_id).order_by(Appointment.appointment_date.desc()).all()
+    return render_template("condition_detail.html",
+                           condition=condition,
+                           logs=logs,
+                           treatments=treatments,
+                           appointments=appointments
+                           )
 
-
-@app.route("/conditions/<int:condition_id>/delete", methods=["POST"])
+@app.route("/conditions/<int:condition_id>/history")
 @login_required
-def delete_condition(condition_id):
+def condition_history(condition_id):
+    """Full timeline / medical history for a condition."""
     condition = Condition.query.get_or_404(condition_id)
-    db.session.delete(condition)
-    db.session.commit()
-    flash("Condition deleted.", "success")
-    return redirect(url_for("dashboard"))
+    appointments = Appointment.query.filter_by(condition_id=condition_id).order_by(Appointment.appointment_date).all()
+    treatments = Treatment.query.filter_by(condition_id=condition_id).order_by(Treatment.start_date).all()
+    logs = SymptomLog.query.filter_by(condition_id=condition_id).order_by(SymptomLog.logged_at).all()
+    return render_template("history.html",
+                           condition=condition,
+                           appointments=appointments,
+                           treatments=treatments,
+                           logs=logs
+                           )
 
-
-@app.route("/conditions/<int:condition_id>/entries/add", methods=["GET", "POST"])
+# ── Doctors ───────────────────────────────────────────────────────────────────
+@app.route("/doctors")
 @login_required
-def add_entry(condition_id):
-    condition = Condition.query.get_or_404(condition_id)
+def doctors():
+    all_doctors = Doctor.query.order_by(Doctor.id).all()
+    return render_template("doctors.html", doctors=all_doctors)
+
+@app.route("/doctors/add", methods=["GET", "POST"])
+@login_required
+def add_doctor():
     if request.method == "POST":
-        text_fields = {
-            "symptoms":     request.form.get("symptoms", ""),
-            "events":       request.form.get("events", ""),
-            "context":      request.form.get("context", ""),
-            "observations": request.form.get("observations", ""),
-            "doctor":       request.form.get("doctor", ""),
-            "medications":  request.form.get("medications", ""),
-        }
-        check = validate_fields(text_fields)
+        check = validate_fields({
+            "specialty": request.form.get("specialty", ""),
+            "city":      request.form.get("city", ""),
+            "country":   request.form.get("country", ""),
+            "notes":     request.form.get("notes", ""),
+        })
         if not check["ok"]:
             for err in check["errors"]:
                 flash(err, "danger")
-            return render_template("add_entry.html", condition=condition,
-                                   now_date=request.form.get("entry_date"),
-                                   now_time=request.form.get("entry_time"))
-        entry_date = request.form.get("entry_date", "")
-        entry_time = request.form.get("entry_time", "00:00")
-        try:
-            entry_at = datetime.strptime(f"{entry_date} {entry_time}", "%Y-%m-%d %H:%M")
-        except ValueError:
-            entry_at = datetime.utcnow()
-        entry = Entry(
-            condition_id = condition_id,
-            entry_at     = entry_at,
-            symptoms     = text_fields["symptoms"]     or None,
-            events       = text_fields["events"]       or None,
-            context      = text_fields["context"]      or None,
-            observations = text_fields["observations"] or None,
-            doctor       = text_fields["doctor"]       or None,
-            medications  = text_fields["medications"]  or None,
+            return render_template("add_doctor.html", form=request.form)
+
+        doctor = Doctor(
+            specialty=request.form["specialty"],
+            city=request.form.get("city"),
+            country=request.form.get("country"),
+            notes=request.form.get("notes"),
         )
-        db.session.add(entry)
-        db.session.flush()
-
-        for name, feeling in zip(request.form.getlist("activity_name[]"),
-                                  request.form.getlist("activity_feeling[]")):
-            if name.strip():
-                db.session.add(Activity(entry_id=entry.id, name=name.strip(),
-                                        feeling_after=feeling.strip() or None))
-
-        for food, feeling in zip(request.form.getlist("diet_food[]"),
-                                  request.form.getlist("diet_feeling[]")):
-            if food.strip():
-                db.session.add(DietItem(entry_id=entry.id, food=food.strip(),
-                                        feeling=feeling.strip() or None))
-
-        att_labels = request.form.getlist("att_label[]")
-        att_urls   = request.form.getlist("att_url[]")
-        att_imgs   = request.form.getlist("att_is_image[]")
-        for i, url in enumerate(att_urls):
-            if url.strip():
-                label    = att_labels[i].strip() if i < len(att_labels) else ""
-                is_image = (att_imgs[i] == "1") if i < len(att_imgs) else False
-                db.session.add(Attachment(entry_id=entry.id, label=label or None,
-                                          url=url.strip(), is_image=is_image))
-
+        db.session.add(doctor)
         db.session.commit()
-        flash("Entry saved.", "success")
-        return redirect(url_for("condition_detail", condition_id=condition_id))
+        flash(f"Doctor {doctor.id} added.", "success")
+        return redirect(url_for("doctors"))
 
-    now = datetime.now()
-    return render_template("add_entry.html", condition=condition,
-                           now_date=now.strftime("%Y-%m-%d"),
-                           now_time=now.strftime("%H:%M"))
+    return render_template("add_doctor.html", form={})
 
-
-@app.route("/entries/<int:entry_id>")
+# ── Appointments ──────────────────────────────────────────────────────────────
+@app.route("/appointments/add", methods=["GET", "POST"])
 @login_required
-def entry_detail(entry_id):
-    entry = Entry.query.get_or_404(entry_id)
-    return render_template("entry_detail.html", entry=entry)
+def add_appointment():
+    conditions = Condition.query.order_by(Condition.name).all()
+    doctors = Doctor.query.order_by(Doctor.id).all()
 
+    if request.method == "POST":
+        check = validate_fields({
+            "reason":  request.form.get("reason", ""),
+            "outcome": request.form.get("outcome", ""),
+        })
+        if not check["ok"]:
+            for err in check["errors"]:
+                flash(err, "danger")
+            return render_template("add_appointment.html", conditions=conditions, doctors=doctors, form=request.form)
 
-@app.route("/entries/<int:entry_id>/delete", methods=["POST"])
+        appt_date = datetime.strptime(request.form["appointment_date"], "%Y-%m-%d").date()
+        req_str   = request.form.get("requested_date")
+        req_date  = datetime.strptime(req_str, "%Y-%m-%d").date() if req_str else None
+        waiting   = (appt_date - req_date).days if req_date else None
+
+        appt = Appointment(
+            condition_id=request.form["condition_id"],
+            doctor_id=request.form.get("doctor_id") or None,
+            requested_date=req_date,
+            appointment_date=appt_date,
+            waiting_days=waiting,
+            reason=request.form.get("reason"),
+            outcome=request.form.get("outcome"),
+            follow_up_needed=bool(request.form.get("follow_up_needed")),
+        )
+        db.session.add(appt)
+        db.session.commit()
+        flash("Appointment logged.", "success")
+        return redirect(url_for("dashboard"))
+
+    return render_template("add_appointment.html", conditions=conditions, doctors=doctors, form={})
+
+# ── Treatments ────────────────────────────────────────────────────────────────
+@app.route("/treatments/add", methods=["GET", "POST"])
 @login_required
-def delete_entry(entry_id):
-    entry = Entry.query.get_or_404(entry_id)
-    cid = entry.condition_id
-    db.session.delete(entry)
-    db.session.commit()
-    flash("Entry deleted.", "success")
-    return redirect(url_for("condition_detail", condition_id=cid))
+def add_treatment():
+    conditions   = Condition.query.order_by(Condition.name).all()
+    doctors      = Doctor.query.order_by(Doctor.id).all()
+    appointments = Appointment.query.order_by(Appointment.appointment_date.desc()).all()
 
+    if request.method == "POST":
+        check = validate_fields({
+            "name":            request.form.get("name", ""),
+            "dosage_details":  request.form.get("dosage_details", ""),
+            "side_effects":    request.form.get("side_effects", ""),
+            "notes":           request.form.get("notes", ""),
+        })
+        if not check["ok"]:
+            for err in check["errors"]:
+                flash(err, "danger")
+            return render_template("add_treatment.html", conditions=conditions, doctors=doctors, appointments=appointments, form=request.form)
+
+        start_str = request.form.get("start_date")
+        end_str   = request.form.get("end_date")
+
+        treatment = Treatment(
+            condition_id=request.form["condition_id"],
+            appointment_id=request.form.get("appointment_id") or None,
+            doctor_id=request.form.get("doctor_id") or None,
+            treatment_type=request.form["treatment_type"],
+            name=request.form["name"],
+            dosage_details=request.form.get("dosage_details"),
+            start_date=datetime.strptime(start_str, "%Y-%m-%d").date() if start_str else None,
+            end_date=datetime.strptime(end_str,   "%Y-%m-%d").date() if end_str   else None,
+            still_ongoing=bool(request.form.get("still_ongoing")),
+            outcome=request.form.get("outcome"),
+            side_effects=request.form.get("side_effects"),
+            active_ingredient=request.form.get("active_ingredient"),
+            notes=request.form.get("notes"),
+        )
+        db.session.add(treatment)
+        db.session.commit()
+        flash("Treatment logged.", "success")
+        return redirect(url_for("dashboard"))
+
+    return render_template("add_treatment.html", conditions=conditions, doctors=doctors, appointments=appointments, form={})
+
+# ── Symptom Logs ──────────────────────────────────────────────────────────────
+BODY_PARTS = [
+    "Hand (L)", "Hand (R)", "Wrist (L)", "Wrist (R)",
+    "Elbow (L)", "Elbow (R)", "Shoulder (L)", "Shoulder (R)",
+    "Neck", "Upper Back", "Lower Back",
+    "Hip (L)", "Hip (R)", "Knee (L)", "Knee (R)",
+    "Ankle (L)", "Ankle (R)", "Foot (L)", "Foot (R)",
+    "Jaw", "Chest", "Abdomen", "Other"
+]
+
+@app.route("/log/add", methods=["GET", "POST"])
+@login_required
+def add_log():
+    conditions = Condition.query.order_by(Condition.name).all()
+
+    if request.method == "POST":
+        check = validate_fields({"notes": request.form.get("notes", "")})
+        if not check["ok"]:
+            for err in check["errors"]:
+                flash(err, "danger")
+            return render_template("add_log.html", conditions=conditions, form=request.form)
+
+        temp_str = request.form.get("temperature")
+
+        def opt_int(key, default=None):
+            v = request.form.get(key)
+            return int(v) if v not in (None, "") else default
+
+        log = SymptomLog(
+            condition_id=request.form["condition_id"],
+            body_part=request.form.get("body_part"),
+            pain_level=int(request.form.get("pain_level", 0)),
+            heat_level=int(request.form.get("heat_level", 0)),
+            swelling_level=int(request.form.get("swelling_level", 0)),
+            redness_level=int(request.form.get("redness_level", 0)),
+            inflammation_level=int(request.form.get("inflammation_level", 0)),
+            mobility_level=int(request.form.get("mobility_level", 10)),
+            fatigue_level=int(request.form.get("fatigue_level", 0)),
+            sleep_quality=int(request.form.get("sleep_quality", 5)),
+            daily_life_impact=int(request.form.get("daily_life_impact", 0)),
+            work_impact=int(request.form.get("work_impact", 0)),
+            has_fever=bool(request.form.get("has_fever")),
+            temperature=float(temp_str) if temp_str else None,
+            sensitivity_cold=opt_int("sensitivity_cold"),
+            sensitivity_hot=opt_int("sensitivity_hot"),
+            sensitivity_pressure=opt_int("sensitivity_pressure"),
+            sensitivity_sweet=opt_int("sensitivity_sweet"),
+            gum_bleeding=opt_int("gum_bleeding"),
+            tooth_mobility=opt_int("tooth_mobility"),
+            bad_taste_odor=True if request.form.get("bad_taste_odor") == "1" else (False if request.form.get("bad_taste_odor") == "0" else None),
+            photo_reference=request.form.get("photo_reference"),
+            notes=request.form.get("notes"),
+        )
+        db.session.add(log)
+        db.session.commit()
+        flash("Symptom log saved.", "success")
+        return redirect(url_for("dashboard"))
+
+    return render_template("add_log.html", conditions=conditions, form={})
+
+# ── API: chart data ───────────────────────────────────────────────────────────
+@app.route("/api/symptom_chart/<int:condition_id>")
+@login_required
+def symptom_chart_data(condition_id):
+    logs = SymptomLog.query.filter_by(condition_id=condition_id).order_by(SymptomLog.logged_at).all()
+    data = [{
+        "date":     log.logged_at.strftime("%Y-%m-%d %H:%M"),
+        "pain":     log.pain_level,
+        "heat":     log.heat_level,
+        "swelling": log.swelling_level,
+        "mobility": log.mobility_level,
+        "fatigue":  log.fatigue_level,
+    } for log in logs]
+    return jsonify(data)
 
 if __name__ == "__main__":
     app.run(debug=True)
